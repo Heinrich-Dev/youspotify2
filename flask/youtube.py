@@ -4,6 +4,7 @@ import os
 
 from googleapiclient.discovery import build
 from pytube import YouTube
+from pytube.exceptions import VideoUnavailable
 
 from moviepy.editor import *
 
@@ -20,19 +21,23 @@ def getNPRIds():
     new_playlistId = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
     request = youtube.playlistItems().list(
-        part="contentDetails",
+        part="snippet,contentDetails",
         playlistId=new_playlistId,
         maxResults=50
     )
-
     response = request.execute()
-    new_nextPageToken = response['nextPageToken']
-
     ids = []
+    items = response['items']
+    for item in items:
+        title = item['snippet']['title']
+        if 'Tiny Desk Concert' in title or 'Tiny Desk (Home) Concert' in title:
+            ids.append(item['contentDetails']['videoId'])
+
+    new_nextPageToken = response['nextPageToken']
 
     while True:  #Always a good sign
         request = youtube.playlistItems().list(
-            part="contentDetails",
+            part="snippet,contentDetails",
             playlistId=new_playlistId,
             maxResults=50,
             pageToken=new_nextPageToken
@@ -40,40 +45,66 @@ def getNPRIds():
 
         response = request.execute()
         items = response['items']
-
         for item in items:
-            ids.append(item['contentDetails']['videoId'])
+            title = item['snippet']['title']
+            if 'Tiny Desk Concert' in title or 'Tiny Desk (Home) Concert' in title:
+                ids.append(item['contentDetails']['videoId'])
 
         try:
             new_nextPageToken = response['nextPageToken']
         except KeyError:
             break
+
     return ids
 
 # Checks video IDs to see if any have already been downloaded, downloads them if not
 def checkVids(ids):
     toDownload = []
-    file = open('../videos/npr.txt', 'w+')
+    file = open('../videos/npr.txt', 'r')
     old_ids = file.readlines()
     for item in ids:
         if item not in old_ids:
-            file.write(item + '\n')
             toDownload.append(item)
+    file.close()
     return toDownload
 
 # Downloads and converts videos from youtube given a list of watch IDs
+# Adds all converted videos' IDs to the text file to ensure they are not downloaded
+# again
 def downloadandConvertVideos(videos):
-    link = "https://www.youtube.com/watch?v=" + vid
-    yt = YouTube(link)
+    file = open('../videos/npr.txt', 'w+')
     for video in videos:
-        yt.streams.filter(only_audio=True).first().download("../videos")
+        link = "https://www.youtube.com/watch?v=" + video
+        yt = YouTube(link)
+        try:
+            mp4path = yt.streams.filter(only_audio=True).first().download("../videos")
+        except VideoUnavailable:
+            continue
+        mp3path = mp4path.replace('mp4', 'mp3')
+        convert(mp4path, mp3path)
+        file.write(video + '\n')
+    file.close()
+        
+
+# Converts an mp4 given its path to an mp3
+# Creates an mp3 file in the process, deletes old mp4 file
+def convert(pathTomp4, pathTomp3):
+    toConvert = AudioFileClip(pathTomp4)
+    toConvert.write_audiofile(pathTomp3)
+    toConvert.close()
+    os.remove(pathTomp4)
 
 # Downloads one video from YouTube, used for testing
 def testDownloadandConvert(url):
     yt = YouTube(url)
-    yt.streams.filter(only_audio=True).first().download("../videos")
+    try:
+        mp4path = yt.streams.filter(only_audio=True).first().download("../videos")
+    except VideoUnavailable:
+        return
+    else:
+        mp3path = mp4path.replace('mp4', 'mp3')
+        convert(mp4path, mp3path)
 
-#TODO: given videos from youtube convert to mp3s
 #TODO: put all mp3s into a zip file
 #TODO: given list of mp3s upload to spotify and create playlist from local files
 #TODO: have process daemonized and check for updates on NPR's channel
@@ -81,7 +112,7 @@ def testDownloadandConvert(url):
 
 
 if __name__ == "__main__":
-    #videoIds = getNPRIds()
-    #toDownload = checkVids(videoIds)
-    #downloadandConvertVideos(toDownload)
-    testDownloadandConvert('https://www.youtube.com/watch?v=_pxMTXadCqI')
+    videoIds = getNPRIds()
+    toDownload = checkVids(videoIds)
+    downloadandConvertVideos(toDownload)
+    #testDownloadandConvert('https://www.youtube.com/watch?v=iYAnixLQno4')
