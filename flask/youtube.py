@@ -16,17 +16,21 @@ def main():
     new_playlistId = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
     request = youtube.playlistItems().list(
-        part="snippet,contentDetails,status",
+        part="contentDetails",
         playlistId=new_playlistId
     )
+    response = request.execute()
     #TODO: extract video ids from list of videos gathered
+    items = response['items']
+    ids = []
+    for item in items:
+        ids.append(item['contentDetails']['videoId'])
+    print(ids)
     #TODO: check if any video ids are not already downloaded
     #TODO: given video ids build urls
     #TODO: given urls download videos from youtube
     #TODO: given videos from youtube convert to mp3s
     #TODO: given list of mp3s upload to spotify and create playlist from local files
-    response = request.execute()
-    print(response)
 
 if __name__ == "__main__":
     main()
