@@ -17,15 +17,44 @@ def main():
 
     request = youtube.playlistItems().list(
         part="contentDetails",
-        playlistId=new_playlistId
+        playlistId=new_playlistId,
+        maxResults=50
     )
+
     response = request.execute()
+    new_nextPageToken = response['nextPageToken']
+
+    ids = []
+
+    #Always a good sign
+    while True:
+        request = youtube.playlistItems().list(
+            part="contentDetails",
+            playlistId=new_playlistId,
+            maxResults=50,
+            pageToken=new_nextPageToken
+        )
+
+        response = request.execute()
+        items = response['items']
+
+        for item in items:
+            ids.append(item['contentDetails']['videoId'])
+
+        try:
+            new_nextPageToken = response['nextPageToken']
+        except KeyError:
+            break
+    print(ids)
+    print(len(ids))
     #TODO: extract video ids from list of videos gathered
+    '''
     items = response['items']
     ids = []
     for item in items:
         ids.append(item['contentDetails']['videoId'])
-    print(ids)
+    #print(ids)
+    '''
     #TODO: check if any video ids are not already downloaded
     #TODO: given video ids build urls
     #TODO: given urls download videos from youtube
