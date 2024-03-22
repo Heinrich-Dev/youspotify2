@@ -1,30 +1,11 @@
 import React, {useState, useEffect} from 'react'
+import Button from './components/Button.jsx'
+import SearchBar from './components/SearchBar.jsx'
 
-function App() {
-  const [data, setData] = useState([{}])
-
-  useEffect(() => {
-    fetch("/test").then(
-      res => res.json()
-    ).then(
-      data => {
-        setData(data)
-        console.log(data)
-      }
-    )
-  }, [])
-
+export default function App() {
   return (
-    <div>
-      {(typeof data.test === 'undefined') ? (
-        <p>Loading data...</p>
-      ) : (
-        data.test.map((test, i) => (
-          <p key={i}>{test}</p>
-        ))
-      )}
-    </div>
+    <>
+        <SearchBar/>
+    </>
   )
 }
-
-export default App
