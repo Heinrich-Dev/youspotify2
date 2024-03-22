@@ -84,18 +84,10 @@ def downloadandConvertVideos(videos):
         convert(mp4path, mp3path)
         file.write(video + '\n')
     file.close()
-        
 
-# Converts an mp4 given its path to an mp3
-# Creates an mp3 file in the process, deletes old mp4 file
-def convert(pathTomp4, pathTomp3):
-    toConvert = AudioFileClip(pathTomp4)
-    toConvert.write_audiofile(pathTomp3)
-    toConvert.close()
-    os.remove(pathTomp4)
-
-# Downloads one video from YouTube, used for testing
-def testDownloadandConvert(url):
+# Downloads one video from YouTube and converts it to an mp3
+# File is saved in a directory outside of the current one, labeled as "videos"
+def downloadandConvert(url):
     yt = YouTube(url)
     try:
         mp4path = yt.streams.filter(only_audio=True).first().download("../videos")
@@ -105,14 +97,20 @@ def testDownloadandConvert(url):
         mp3path = mp4path.replace('mp4', 'mp3')
         convert(mp4path, mp3path)
 
+# Converts an mp4 given its path to an mp3
+# Creates an mp3 file in the process, deletes old mp4 file
+def convert(pathTomp4, pathTomp3):
+    toConvert = AudioFileClip(pathTomp4)
+    toConvert.write_audiofile(pathTomp3)
+    toConvert.close()
+    os.remove(pathTomp4)
+
 #TODO: put all mp3s into a zip file
 #TODO: given list of mp3s upload to spotify and create playlist from local files
 #TODO: have process daemonized and check for updates on NPR's channel
-
-
 
 if __name__ == "__main__":
     videoIds = getNPRIds()
     toDownload = checkVids(videoIds)
     downloadandConvertVideos(toDownload)
-    #testDownloadandConvert('https://www.youtube.com/watch?v=iYAnixLQno4')
+    #downloadandConvert('https://www.youtube.com/watch?v=iYAnixLQno4')
