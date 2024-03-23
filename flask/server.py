@@ -3,7 +3,8 @@ import spotipy
 import os
 import time
 from spotipy.oauth2 import SpotifyOAuth
-from flask import Flask, session, url_for, redirect, request
+from flask import Flask, session, url_for, redirect, request, json
+from youtube import getVideoInfo
 
 app = Flask(__name__)
 
@@ -20,30 +21,11 @@ def redirect_page():
     session[TOKEN] = token
     return redirect(url_for('saveTinyDesk', external = True))
 
-@app.route("/youtubeget", methods=["POST"], strict_slashes=False)
+@app.route("/youtubeget", methods=["POST"])
 def youtubeget():
-    return {"Status": "Success"}
-
-@app.route("/tinydesk")
-def saveTinyDesk():
-    try:
-        token = get_new_token()
-    except:
-        return redirect('/')
-    
-    sp = spotipy.Spotify(auth=token['access_token'])
-    user_playlists = sp.current_user_playlists()['items']
-    playlist_exists = False
-    for playlist in user_playlists:
-        if(playlist['name'] == new_playlist_name):
-            playlist_exists = True
-            break
-    if(playlist_exists):
-        update_playlist(sp)
-    #TODO: update playlists
-    else:
-        create_playlist(sp)
-       #update_playlist(sp)
+    json = request.get_json()
+    query = json["search"]
+    return getVideoInfo(query)
         
 def create_playlist(sp):
     id = sp.current_user()['id']

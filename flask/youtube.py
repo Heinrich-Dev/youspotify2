@@ -8,10 +8,23 @@ from pytube.exceptions import VideoUnavailable
 
 from moviepy.editor import *
 
+
+api_key = os.environ["YOUTUBE_API_KEY"]
+youtube = build("youtube", "v3", developerKey=api_key)
+
+
+def getVideoInfo(url):
+    vid = ""
+    substr = "https://www.youtube.com/watch?v="
+    vid = url.replace(substr, "")
+    request = youtube.videos().list(
+        part='contentDetails',
+        id=vid,
+        maxResults=1
+    )
+    return request.execute()
 # Returns a list of video IDs from NPR's YouTube channel
 def getNPRIds():
-    api_key = os.environ["YOUTUBE_API_KEY"]
-    youtube = build("youtube", "v3", developerKey=api_key)
     request = youtube.channels().list(
         part='contentDetails',
         forUsername="nprmusic"
@@ -49,7 +62,6 @@ def getNPRIds():
             title = item['snippet']['title']
             if 'Tiny Desk Concert' in title or 'Tiny Desk (Home) Concert' in title:
                 ids.append(item['contentDetails']['videoId'])
-
         try:
             new_nextPageToken = response['nextPageToken']
         except KeyError:
@@ -110,7 +122,4 @@ def convert(pathTomp4, pathTomp3):
 #TODO: have process daemonized and check for updates on NPR's channel
 
 if __name__ == "__main__":
-    videoIds = getNPRIds()
-    toDownload = checkVids(videoIds)
-    downloadandConvertVideos(toDownload)
-    #downloadandConvert('https://www.youtube.com/watch?v=iYAnixLQno4')
+    pass
