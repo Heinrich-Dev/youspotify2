@@ -6,16 +6,19 @@ function SearchBar(){
 
     function OnSubmit(e) {
         e.preventDefault()
-        const value = inputRef.current.value
-        
-        var jsonData = {
-            "search": value
-        }
+        const val = inputRef.current.value
 
         fetch("/youtubeget", {
             method: 'POST',
-            body: JSON.stringify(jsonData)
+            body: JSON.stringify({
+                "search": val
+            }),
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8'
+            },
         })
+
+        console.log()
     }
     
     return (
