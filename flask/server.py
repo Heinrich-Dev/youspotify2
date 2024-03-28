@@ -7,7 +7,6 @@ import base64
 import re
 import hashlib
 import urllib
-from spotipy.oauth2 import SpotifyOAuth
 from flask import Flask, session, url_for, redirect, request, json, jsonify
 from youtube import getVideoInfo
 
@@ -59,14 +58,22 @@ def redirectPage():
             'client_secret': CLIENT_SECRET,
         }
 
-        response = requests.post(url, data=dataObj)
+        response = requests.post(url, headers=headerObj, data=dataObj)
         token = response.json()
 
         session['accessToken'] = token['access_token']
         session['refreshToken'] = token['refresh_token']
         session['expiresAt'] = datetime.now().timestamp() + token['expires_in']
 
-        return "<h1>{token}</h1>"
+        return "<a href='/getTest'> Get Local File Hopefully</a>"
+
+@app.route('/getTest')
+def getTest():
+    token = session['accessToken']
+    playlist = getPlaylistItems(token)
+    uris = geturis(playlist)
+    result = addToPlaylist(token, '1W4qGpgPZ9OA5yiCZp9DQJ', uris)
+    return "<h1>{result}</h1>"
 
 @app.route("/youtubeget", methods=["POST"])
 def youtubeget():
@@ -74,25 +81,12 @@ def youtubeget():
     query = json["search"]
     return getVideoInfo(query)
 
-#used for testing
-def getAccessToken():
-    url = 'https://accounts.spotify.com/api/token'
-    obj = {
-        'Content-type': 'application/x-www-form-urlencoded',
-        'grant_type': 'client_credentials',
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET
-    }
-    result = requests.post(url, data = obj)
-    return result.json()['access_token']
-
 def getPlaylistItems(accessToken):
     url = 'https://api.spotify.com/v1/playlists/0OzEgmNhb9SRFbDXTddWma?si=12c5203d76734844/tracks' # Henry's playlist ID
     headerObj = {
         'Authorization': 'Bearer ' + accessToken 
     }
     result = requests.get(url, headers=headerObj)
-    #print(result.json())
     return result.json()
 
 def geturis(playlistItems):
@@ -103,7 +97,7 @@ def geturis(playlistItems):
     return uris
 
 def addToPlaylist(accessToken, playlistId, uris):
-    url = 'https://api.spotify.com/v1/playlists/' + playlistId +'/tracks'
+    url = 'https://api.spotify.com/v1/playlists/' + playlistId + '/tracks'
     headerObj = {
         'Authorization': 'Bearer ' + accessToken,
         'Content-type': 'application/json'
@@ -112,11 +106,9 @@ def addToPlaylist(accessToken, playlistId, uris):
         'uris': uris,
         'position': 0
     }
-    result = requests.post(url, headers=headerObj, data=dataObj)
-    print(result)
+    result = requests.post(url, headers=headerObj, json=dataObj)
+    print(result.json())
+    return result
 
 if __name__ == "__main__":
-    #playlist = getPlaylistItems(token)
-    #uris = geturis(playlist)
-    #addToPlaylist(token, '1W4qGpgPZ9OA5yiCZp9DQJ?si=09cbe1029383409d', uris)
     app.run(debug=True)
