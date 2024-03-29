@@ -23,8 +23,7 @@ def start():
 
 @app.route("/login")
 def login():
-
-    scope = 'playlist-modify-public playlist-modify-private'
+    scope = 'user-read-playback-state'
 
     url = 'https://accounts.spotify.com/authorize'
 
@@ -65,7 +64,31 @@ def redirectPage():
         session['refreshToken'] = token['refresh_token']
         session['expiresAt'] = datetime.now().timestamp() + token['expires_in']
 
-        return "<a href='/getTest'> Get Local File Hopefully</a>"
+        return "<a href='/getPlaybackState'> Connect to Player</a>"
+
+@app.route('/getPlaybackState')
+def getPlaybackState():
+    token = session['accessToken']
+
+    url = 'https://api.spotify.com/v1/me/player'
+
+    headerObj = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    result = requests.get(url, headers=headerObj)
+
+    if result.status_code > 200:
+        return '<h1> Playback not available.</h1>'
+
+    track = result.json()['item']['name']
+    artist = result.json()['item']['artists'][0]['name']
+
+    print(track)
+    print(artist)
+
+
+    return '<h1> Track: {track} Artist: {artist}</h1>'
 
 @app.route('/getTest')
 def getTest():
@@ -94,6 +117,7 @@ def geturis(playlistItems):
     uris = []
     for item in items:
         uris.append(item['track']['uri'])
+    print(uris)
     return uris
 
 def addToPlaylist(accessToken, playlistId, uris):
@@ -107,7 +131,6 @@ def addToPlaylist(accessToken, playlistId, uris):
         'position': 0
     }
     result = requests.post(url, headers=headerObj, json=dataObj)
-    print(result.json())
     return result
 
 if __name__ == "__main__":
