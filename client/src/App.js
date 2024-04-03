@@ -1,11 +1,12 @@
-import React, {useState, useEffect} from 'react'
-import Button from './components/Button.jsx'
-import SearchBar from './components/SearchBar.jsx'
+import React from 'react'
+import Header from './components/Header.jsx'
 
 export default function App() {
   return (
     <>
-        <SearchBar/>
+      <div class="body">
+        <Header/>
+      </div>
     </>
   )
 }
